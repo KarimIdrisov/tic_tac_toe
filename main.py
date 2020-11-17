@@ -6,7 +6,8 @@ import random
 class Board:
     # создание поля
     def __init__(self, width, height, screen):
-        self.opponent = False;
+        self.is_win = False
+        self.opponent = True
         self.width = width
         self.height = height
         self.board = [[0] * width for _ in range(height)]
@@ -29,7 +30,7 @@ class Board:
     def get_click(self, pos):
         cell = self.get_cell(pos)
         if self.board[cell[0]][cell[1]] == 0:
-            self.board[cell[0]][cell[1]] = 1
+            self.board[cell[0]][cell[1]] = 1 if self.opponent else 2
             score = pygame.font.SysFont('serif', 150)
             if self.opponent:
                 text = score.render(str("X"), 1, pygame.Color('black'))
@@ -42,16 +43,35 @@ class Board:
         self.opponent = not self.opponent
 
     def reset(self):
+        self.is_win = False
         screen.fill('white')
         self.count = 0
-        self.board = [[0] * width for _ in range(height)]
+        self.board = [[0] * self.width for _ in range(self.height)]
 
     def check_full(self):
         if self.count == 10:
-            pygame.time.wait(600)
+            pygame.time.wait(1200)
             self.reset()
-        if self.count == 9:
+        if self.count == 9 or self.is_win:
             self.count += 1
+
+    def check_win(self):
+        turn = 1 if self.opponent else 2
+        if all(self.board[0][i] == turn for i in range(3)):
+            pygame.draw.aaline(self.screen, 'red', [100, 20], [100, 550], 25)
+            self.win()
+        if all(self.board[1][i] == turn for i in range(3)):
+            pygame.draw.aaline(self.screen, 'red', [200, 20], [200, 550], 25)
+            # self.win()
+
+    def win(self):
+        pygame.draw.rect(self.screen, 'black', ((50, 100), (500, 350)))
+        score = pygame.font.SysFont('serif', 50)
+        end = ' Win' if self.opponent else ' Lose'
+        text = score.render(str("You" + end), 1, pygame.Color('white'))
+        self.screen.blit(text, (200, 250))
+        self.is_win = True
+
 
 size = width, height = (600, 600)
 screen = pygame.display.set_mode(size)
@@ -67,6 +87,7 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             board.get_click(event.pos)
+            board.check_win()
             board.change_turn()
     board.render()
     board.check_full()
